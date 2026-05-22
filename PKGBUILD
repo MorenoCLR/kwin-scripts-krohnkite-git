@@ -40,7 +40,7 @@ build() {
     fi
   fi
 
-  npm install --save-dev
+  npm install --cache "${srcdir}/npm-cache" --save-dev
   npm run tsc --
 
   mkdir -p pkg/contents/{code,config,ui}
