@@ -30,16 +30,18 @@ pkgver() {
   git describe --long --tags --abbrev=7 | sed -E 's/^v//;s/([^-]*-g)/r\1/;s/-/./g'
 }
 
-build() {
+prepare() {
   cd "$_pkgsrc"
-
   if [ -f "tsconfig.json" ]; then
     sed -i '/"outFile"/d' tsconfig.json
     if ! grep -q '"rootDir"' tsconfig.json; then
       sed -i '/"compilerOptions": {/a \    "rootDir": "./src",' tsconfig.json
     fi
   fi
+}
 
+build() {
+  cd "$_pkgsrc"
   npm install --cache "${srcdir}/npm-cache" --save-dev
   npm run tsc --
 
@@ -67,4 +69,6 @@ package() {
   cp -r "$_pkgsrc"/pkg/. "$pkgdir/usr/share/kwin/scripts/$_gitname/"
 
   install -Dm644 "$_pkgsrc/LICENSE" -t "$pkgdir/usr/share/licenses/$pkgname/"
+
+  chown -R root:root "${pkgdir}"
 }
