@@ -1,5 +1,5 @@
 # Maintainer:
-# Contributor: Jan Buchar <Teyras@gmail.com>
+# Contributor: Moreno <contact@morenoclr.com>
 
 _gitname="krohnkite"
 _pkgname="kwin-scripts-$_gitname"
@@ -13,7 +13,9 @@ arch=('any')
 
 makedepends=(
   'git'
-  'typescript'
+  'npm'           # Added npm for building
+  'typescript'    # Keep typescript
+  'p7zip'         # For packaging (mentioned in README)
 )
 
 provides=("$_pkgname")
@@ -30,23 +32,33 @@ pkgver() {
 
 build() {
   cd "$_pkgsrc"
-  mkdir -p pkg
 
-  # krohnkite.js
-  tsc
-  install -Dm644 krohnkite.js pkg/contents/code/script.js
+  # Patch tsconfig.json
+  if [ -f "tsconfig.json" ]; then
+    sed -i '/"outFile"/d' tsconfig.json
+    if ! grep -q '"rootDir"' tsconfig.json; then
+      sed -i '/"compilerOptions": {/a \    "rootDir": "./src",' tsconfig.json
+    fi
+  fi
 
-  # metadata.json
-  sed -E -e 's&\$VER&'${pkgver}'&' \
-    -e 's&\$REV&'${pkgver}'&' \
-    res/metadata.json > pkg/metadata.json
+  # Install dependencies and build
+  npm install --save-dev
+  npm run tsc --
 
-  # config
-  install -Dm644 res/config.xml pkg/contents/config/main.xml
+  # Create package structure manually (since we're not using task)
+  mkdir -p pkg/contents/{code,config,ui}
 
-  # other files
-  install -Dm644 res/*.js -t pkg/contents/code/
-  install -Dm644 res/*.{qml,ui} -t pkg/contents/ui/
+  # Copy compiled files
+  [ -f "krohnkite.js" ] && install -Dm644 krohnkite.js pkg/contents/code/script.js
+  [ -f "res/main.js" ] && install -Dm644 res/main.js pkg/contents/code/
+  [ -f "res/main.qml" ] && install -Dm644 res/main.qml pkg/contents/ui/
+  [ -f "res/config.ui" ] && install -Dm644 res/config.ui pkg/contents/ui/
+  [ -f "res/config.xml" ] && install -Dm644 res/config.xml pkg/contents/config/main.xml
+
+  # Create metadata.json with version substitution
+  sed -e "s/\$VER/${pkgver}/g" \
+      -e "s/\$REV/${pkgver}/g" \
+      res/metadata.json > pkg/metadata.json
 }
 
 package() {
