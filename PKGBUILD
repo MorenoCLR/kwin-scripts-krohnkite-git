@@ -4,8 +4,8 @@
 _gitname="krohnkite"
 _pkgname="kwin-scripts-$_gitname"
 pkgname="$_pkgname-git"
-pkgver=0.9.9.2.r57.g39486c4
-pkgrel=2
+pkgver=0.9.9.2.r74.g1803454
+pkgrel=1
 pkgdesc="A dynamic tiling extension for KWin"
 url="https://codeberg.org/anametologin/Krohnkite"
 license=('MIT')
@@ -13,9 +13,9 @@ arch=('any')
 
 makedepends=(
   'git'
-  'npm'           # Added npm for building
-  'typescript'    # Keep typescript
-  'p7zip'         # For packaging (mentioned in README)
+  'npm'
+  'typescript'
+  'p7zip'
 )
 
 provides=("$_pkgname")
@@ -33,7 +33,6 @@ pkgver() {
 build() {
   cd "$_pkgsrc"
 
-  # Patch tsconfig.json
   if [ -f "tsconfig.json" ]; then
     sed -i '/"outFile"/d' tsconfig.json
     if ! grep -q '"rootDir"' tsconfig.json; then
@@ -41,11 +40,9 @@ build() {
     fi
   fi
 
-  # Install dependencies and build
   npm install --save-dev
   npm run tsc --
 
-  # Create package structure manually (since we're not using task)
   mkdir -p pkg/contents/{code,config,ui}
 
   # Copy compiled files
